@@ -11,6 +11,8 @@ const port = process.env.PORT || 8000;
 // connect to databse
 connectDb();
 
+// middlewares
+app.use(express.json({ extended: false }));
 app.use(userRouter);
 app.use(authRouter);
 app.use(profileRouter);
