@@ -4,12 +4,13 @@ const Profile = require('../../models/profile');
 const auth = require('../../middleware/auth');
 const router = require('./user');
 const { check, validationResult } = require('express-validator');
+const User = require('../../models/User');
 
 profileRouter.get('/api/profile/me', auth, async (req, res) => {
   try {
     const profile = await Profile.findOne({
       user: req.user.id,
-    }).populate('User', ['name', 'avatar']);
+    }).populate('user', ['name', 'avatar']);
     if (!profile) {
       return res.status(404).send({ message: 'not found' });
     }
@@ -88,5 +89,50 @@ profileRouter.post(
     return res.status(200).send();
   }
 );
+
+profileRouter.get('/api/profiles', async (req, res) => {
+  try {
+    const profiles = await Profile.find({}).populate('user', [
+      'name',
+      'avatar',
+    ]);
+    res.status(200).send(profiles);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send();
+  }
+});
+
+profileRouter.get('/api/profile/user/:user_id', async (req, res) => {
+  try {
+    const profile = await Profile.findOne({
+      user: req.params.user_id,
+    }).populate('user', ['name', 'avatar']);
+    if (!profile) {
+      return res.status(404).send({ message: 'not found' });
+    }
+    res.status(200).send(profile);
+  } catch (err) {
+    if (err.kind == 'ObjectId') {
+      return res.status(404).send({ message: 'not found' });
+    }
+    console.log(err);
+    return res.status(500).send();
+  }
+});
+
+profileRouter.delete('/api/profile', auth, async (req, res) => {
+  try {
+    // @todo remove users posts
+
+    await Profile.findOneAndRemove({ user: req.user.id });
+    // remove the user
+    await User.findOneAndRemove({ _id: req.user.id });
+    res.status(200).send();
+  } catch (err) {
+    console.log(err);
+    res.status(500).send();
+  }
+});
 
 module.exports = profileRouter;
