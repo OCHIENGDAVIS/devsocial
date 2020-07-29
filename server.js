@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const connectDb = require('./config/db');
 const userRouter = require('./router/api/user');
 const authRouter = require('./router/api/auth');
@@ -13,6 +14,7 @@ connectDb();
 
 // middlewares
 app.use(express.json({ extended: false }));
+app.use(cors());
 app.use(userRouter);
 app.use(authRouter);
 app.use(profileRouter);
