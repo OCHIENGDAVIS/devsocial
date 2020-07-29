@@ -5,6 +5,8 @@ const Post = require('../../models/post');
 const Profile = require('../../models/profile');
 const User = require('../../models/User');
 const postRouter = express.Router();
+
+// CREATIG POST
 postRouter.post(
   '/api/post',
   [auth, [check('text', 'text is required').not().isEmpty()]],
@@ -31,6 +33,7 @@ postRouter.post(
   }
 );
 
+// comment on a post
 postRouter.post(
   '/api/post/comment/:id',
   [auth, [check('text', 'text is required').not().isEmpty()]],
@@ -61,6 +64,8 @@ postRouter.post(
     res.send('post route');
   }
 );
+
+// delete a comment
 postRouter.delete('/api/comment/:id/:comment_id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -84,16 +89,100 @@ postRouter.delete('/api/comment/:id/:comment_id', auth, async (req, res) => {
   }
 });
 
-postRouter.get('/api/posts', auth, async (req, res) => {
+// get all posts
+postRouter.get('/api/posts', async (req, res) => {
   try {
-    const posts = await Post.find({ user: req.user.id }).populate('users', [
-      'name',
-      'avatar',
-    ]);
+    const posts = await Post.find({});
     res.status(200).send(posts);
   } catch (err) {
     console.log(err);
     res.status(500).send({ err });
+  }
+});
+// GET a post
+postRouter.get('/api/posts/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).send({ message: 'not found' });
+    }
+    res.status(200).send(post);
+  } catch (err) {
+    console.log(err);
+    if (err.kind == 'ObjectId') {
+      return res.send({ message: 'not object id' });
+    }
+    return res.status(500).send({ err });
+  }
+});
+// DELETE a single post
+postRouter.delete('/api/posts/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      res.status(404).send({ message: 'not found' });
+    }
+    if (post.user.toString() !== req.user.id) {
+      res.status(401).send({ message: 'forbidden' });
+    }
+    await post.remove();
+    res.status(200).send();
+  } catch (err) {
+    console.log(err);
+    if (err.kind == 'ObjectId') {
+      return res.send({ message: 'not found' });
+    }
+    res.status(500).send({ err });
+  }
+});
+postRouter.put('/api/posts/like/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).send({ message: 'not found' });
+    }
+    if (
+      post.likes.filter((like) => like.user.toString() === req.user.id).length >
+      0
+    ) {
+      return res.status(400).send({ message: 'already liked' });
+    }
+    post.likes.unshift({ user: req.user.id });
+    await post.save();
+    res.status(200).send(post.likes);
+  } catch (err) {
+    console.log(err);
+    if (err.kind == 'ObjectId') {
+      return res.send({ message: 'not found' });
+    }
+    res.status(500).send();
+  }
+});
+postRouter.put('/api/posts/unlike/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).send({ message: 'not found' });
+    }
+    if (
+      post.likes.filter((like) => like.user.toString() === req.user.id)
+        .length === 0
+    ) {
+      return res.status(400).send({ message: 'not yet liked' });
+    }
+    // Get A reomve index
+    const removeIndex = post.likes
+      .map((like) => like.user.toString())
+      .indexOf(req.user.id);
+    post.likes.splice(removeIndex, 1);
+    await post.save();
+    res.status(200).send(post.likes);
+  } catch (err) {
+    console.log(err);
+    if (err.kind == 'ObjectId') {
+      return res.send({ message: 'not found' });
+    }
+    res.status(500).send();
   }
 });
 module.exports = postRouter;
