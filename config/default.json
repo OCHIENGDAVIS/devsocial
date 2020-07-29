@@ -1,4 +1,6 @@
 {
   "mongoURI": "mongodb://localhost:27017/devconnect",
-  "JWT_SECRET": "supersecret"
+  "JWT_SECRET": "supersecret",
+  "githubClientId": "c4bf899f52adaabea9cb",
+  "githubSecret": "a556e367b5b09f14b01fd4995e61fca4cc4cdcf4"
 }
