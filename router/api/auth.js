@@ -8,7 +8,19 @@ const User = require('../../models/User');
 
 const authRouter = express.Router();
 
-authRouter.post('/api/login', async (req, res) => {
+// GET USER
+authRouter.get('/api/auth', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.status(200).send(user);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send();
+  }
+});
+
+// AUTHENTICATE A USER
+authRouter.post('/api/auth', async (req, res) => {
   const { password, email } = req.body;
   if (validator.isEmpty(password) || validator.isEmpty(email)) {
     return res.status(400).send({ message: 'bad request' });
